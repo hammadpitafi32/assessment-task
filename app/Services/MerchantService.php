@@ -20,7 +20,21 @@ class MerchantService
      */
     public function register(array $data): Merchant
     {
+
         // TODO: Complete this method
+        $data['type']=User::TYPE_MERCHANT,
+        $user=User::create($data);
+
+        // Create a new merchant associated with the user
+        $merchantData = [
+            'user_id' => $user->id,
+            'domain' => $data['domain'],
+            'display_name' => $user->name,
+       
+            // Include any other merchant-specific data you need to store
+        ];
+
+        return $merchant = Merchant::firstOrCreate(['domain' => $data['domain']], $merchantData);
     }
 
     /**
@@ -32,6 +46,27 @@ class MerchantService
     public function updateMerchant(User $user, array $data)
     {
         // TODO: Complete this method
+
+        // Find the associated merchant for the user
+        $merchant = $user->merchant;
+
+         // Check if the merchant exists for the user
+        if (!$merchant) {
+            // Handle the case when the merchant does not exist for the user
+            // For example, throw an exception or log an error
+            throw new \Exception('Merchant not found for the user.');
+        }
+
+        $merchant->domain=$data['domain'];
+        $merchant->display_name=$data['display_name'];
+        $merchant->turn_customers_into_affiliates=$data['turn_customers_into_affiliates'];
+        $merchant->default_commission_rate=$data['default_commission_rate'];
+        // Add more fields as needed based on your merchant model
+
+        // Save the updated merchant data
+        $merchant->save();
+
+        return $merchant;
     }
 
     /**
@@ -44,6 +79,13 @@ class MerchantService
     public function findMerchantByEmail(string $email): ?Merchant
     {
         // TODO: Complete this method
+         // Use Eloquent query builder to find the merchant by email
+        $merchant = Merchant::whereHas('user', function ($query) use ($email) {
+            $query->where('email', $email);
+        })->first();
+
+        // If no merchant is found, you can return null or handle the case as needed
+        return $merchant;
     }
 
     /**
@@ -56,5 +98,16 @@ class MerchantService
     public function payout(Affiliate $affiliate)
     {
         // TODO: Complete this method
+
+        // Find all unpaid orders for the given affiliate
+        $unpaidOrders = Order::where('affiliate_id', $affiliate->id)
+            ->where('payout_status', Order::STATUS_UNPAID)
+            ->get();
+
+        // Dispatch the PayoutOrderJob for each unpaid order
+        foreach ($unpaidOrders as $order) {
+            // We can pass any additional data needed by the job in the second parameter
+            dispatch(new PayoutOrderJob($order));
+        }
     }
 }
