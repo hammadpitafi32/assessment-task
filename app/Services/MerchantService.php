@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Validation\Validator;
 use App\Jobs\PayoutOrderJob;
 use App\Models\Affiliate;
 use App\Models\Merchant;
@@ -21,20 +22,22 @@ class MerchantService
     public function register(array $data): Merchant
     {
 
-        // TODO: Complete this method
-        $data['type']=User::TYPE_MERCHANT,
-        $user=User::create($data);
+         // TODO: Complete this method
+         // Create a new user
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['api_key'],
+            'type' => User::TYPE_MERCHANT
+        ]);
 
         // Create a new merchant associated with the user
-        $merchantData = [
-            'user_id' => $user->id,
+        return Merchant::create([
             'domain' => $data['domain'],
-            'display_name' => $user->name,
-       
-            // Include any other merchant-specific data you need to store
-        ];
+            'user_id' => $user->id,
+            'display_name' => $data['name']
+        ]);
 
-        return $merchant = Merchant::firstOrCreate(['domain' => $data['domain']], $merchantData);
     }
 
     /**
@@ -49,24 +52,27 @@ class MerchantService
 
         // Find the associated merchant for the user
         $merchant = $user->merchant;
-
+       
          // Check if the merchant exists for the user
         if (!$merchant) {
             // Handle the case when the merchant does not exist for the user
             // For example, throw an exception or log an error
-            throw new \Exception('Merchant not found for the user.');
+            // throw new \Exception('Merchant not found for the user.');
+            return;
         }
 
         $merchant->domain=$data['domain'];
-        $merchant->display_name=$data['display_name'];
-        $merchant->turn_customers_into_affiliates=$data['turn_customers_into_affiliates'];
-        $merchant->default_commission_rate=$data['default_commission_rate'];
-        // Add more fields as needed based on your merchant model
-
+        $merchant->display_name=$data['name'];
+     
         // Save the updated merchant data
         $merchant->save();
+      
+        $user->email=$data['email'];
+        $user->name=$data['name'];
+        $user->password=$data['api_key'];
+        $user->save();
 
-        return $merchant;
+        return;
     }
 
     /**
@@ -98,16 +104,20 @@ class MerchantService
     public function payout(Affiliate $affiliate)
     {
         // TODO: Complete this method
+        try{
+            // Find all unpaid orders for the given affiliate
+            $unpaidOrders = Order::where('affiliate_id', $affiliate->id)
+                ->where('payout_status', Order::STATUS_UNPAID)
+                ->get();
 
-        // Find all unpaid orders for the given affiliate
-        $unpaidOrders = Order::where('affiliate_id', $affiliate->id)
-            ->where('payout_status', Order::STATUS_UNPAID)
-            ->get();
-
-        // Dispatch the PayoutOrderJob for each unpaid order
-        foreach ($unpaidOrders as $order) {
-            // We can pass any additional data needed by the job in the second parameter
-            dispatch(new PayoutOrderJob($order));
+            // Dispatch the PayoutOrderJob for each unpaid order
+            foreach ($unpaidOrders as $order) {
+                // We can pass any additional data needed by the job in the second parameter
+                dispatch(new PayoutOrderJob($order));
+            }
+        }catch (\Exception $e) {
+            throw new \Exception('roll back job.');
         }
+       
     }
 }

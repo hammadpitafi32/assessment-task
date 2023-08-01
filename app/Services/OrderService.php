@@ -9,7 +9,7 @@ use App\Models\User;
 
 class OrderService
 {
-    protected $affiliateService;
+
     public function __construct(
         protected AffiliateService $affiliateService
     ) {
@@ -26,18 +26,19 @@ class OrderService
      */
     public function processOrder(array $data)
     {
+
         // TODO: Complete this method
-        $user=User::where('email',$data['customer_email'])->where('name',$data['customer_name'])->first();
+        $user=User::where('email',$data['customer_email'])->first();
 
         if(!$user){
                 // throw an exception 
-                throw new \Exception('User not found.');
+             return;
         }
         $merchant=Merchant::where('domain',$data['merchant_domain'])->first();
 
         if(!$merchant){
                 // throw an exception
-                throw new \Exception('Merchant not found.');
+            return;
         }
 
         // Check if an affiliate exists for the given customer_email
@@ -49,7 +50,7 @@ class OrderService
         }
 
         // Check if the order_id already exists to avoid processing duplicate orders
-        $existingOrder = Order::find((int)$data['order_id']);
+        $existingOrder = Order::find($data['order_id']);
 
         if ($existingOrder) {
            
@@ -73,6 +74,6 @@ class OrderService
         // Save the order to the database
         $order->save();
 
-        return $order;
+        return;
     }
 }

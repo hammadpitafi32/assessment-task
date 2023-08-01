@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 
 class AffiliateService
 {
-    protected $apiService;
+
     public function __construct(
         protected ApiService $apiService
     ) {
@@ -28,18 +28,29 @@ class AffiliateService
      * @param  float $commissionRate
      * @return Affiliate
      */
-    public function register(Merchant $merchant, string $email, string $name, float $commissionRate): Affiliate
+    public function register(Merchant $merchant, string $email, string $name, float $commissionRate)
     {
         // TODO: Complete this method
-        $user=User::where('email',$email)->where('name',$name)->first();
 
+            // Create a new user
+        $user = User::create([
+            'name' => $name,
+            'email' => $email,
+            'type' => User::TYPE_AFFILIATE
+        ]);
+      
+        if($user->type == User::TYPE_MERCHANT){
+            throw new \Exception('email is in use with merchant.');
+            return;
+        }
         $discount_code=$this->apiService->createDiscountCode($merchant);
+
          // Create a new affiliate record associated with the merchant
         $affiliate = new Affiliate([
             'merchant_id' => $merchant->id,
             'user_id' => $user->id,
             'commission_rate' => $commissionRate,
-            'discount_code'=>$discount_code['code'];
+            'discount_code'=>$discount_code['code']
         ]);
 
         // Save the affiliate to the database

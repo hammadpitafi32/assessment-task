@@ -16,7 +16,6 @@ class PayoutOrderJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $order;
     /**
      * Create a new job instance.
      *
@@ -45,7 +44,7 @@ class PayoutOrderJob implements ShouldQueue
 
             // Use the ApiService to send the payout
             $apiService->sendPayout($email, $amount);
-
+     
             // If the payout is successful, update the order status to "paid"
             $this->order->payout_status = Order::STATUS_PAID;
             $this->order->save();
@@ -53,6 +52,7 @@ class PayoutOrderJob implements ShouldQueue
             // If there's an exception during the payout, leave the order status as "unpaid"
             // You can handle the exception here (e.g., logging, sending alerts, etc.)
             throw new \Exception('Payout process failed .');
+            return;
         }
     }
 }

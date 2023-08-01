@@ -67,31 +67,31 @@ class MerchantController extends Controller
         ]);
     }
 
-    public function register(Request $request)
-    {
-        // Validate the incoming registration data (you can add more validation rules)
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'api_key' => 'required|string',
-            'domain' => 'required|string',
-        ]);
+    // public function register(Request $request)
+    // {
+    //     // Validate the incoming registration data (you can add more validation rules)
+    //     $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'email' => 'required|string|email|max:255|unique:users',
+    //         'api_key' => 'required|string',
+    //         'domain' => 'required|string',
+    //     ]);
 
-        // Set data for a new user
-        $data = [
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => Hash::make($request->input('api_key')), // Hash the API key (password field)
-            'domain' => $request->input('domain'),
+    //     // Set data for a new user
+    //     $data = [
+    //         'name' => $request->input('name'),
+    //         'email' => $request->input('email'),
+    //         'password' => Hash::make($request->input('api_key')), // Hash the API key (password field)
+    //         'domain' => $request->input('domain'),
            
-        ];
+    //     ];
 
  
-        $merchant = $this->merchantService->register($data);
+    //     $merchant = $this->merchantService->register($data);
 
-        // Return the merchant data in JSON format
-        return response()->json([
-            'merchant' => $merchant
-        ]);
-    }
+    //     // Return the merchant data in JSON format
+    //     return response()->json([
+    //         'merchant' => $merchant
+    //     ]);
+    // }
 }
